@@ -6,7 +6,7 @@ A scratch repo for codes for GCQ. Such codes automatically create a 1D quadratur
 
 ### Example
 
-In Julia, here we build a custom quadrature on (-1,1) for smooth functions plus functions are smooth times a logarithmic singularity at ``x0=0.6`` which lies in the integration interval:
+In Julia, here we build a custom 12-digit accurate quadrature on (-1,1) for smooth functions plus functions are smooth times a logarithmic singularity at ``x0=0.6`` (inside the integration interval):
 
 ```julia-repl
     a, b = -1.0, 1.0                                                    # interval
@@ -14,12 +14,20 @@ In Julia, here we build a custom quadrature on (-1,1) for smooth functions plus 
     # construct the rule...
     fs = x -> reduce(vcat, x^k .* [1, log(abs(x - x0))] for k = 0:20)   # family of 41 funcs
     x, w = genchebquad(fs, a, b, 1e-12)                                 # x are nodes and w weights
+    println("num nodes = ", length(x))
     f = x -> sin(1 + 3x)                                                # smooth test func
     fp = x -> 3cos(1 + 3x)                                              # fp must be deriv of f
     println("smooth error = ", sum(w .* fp.(x)) - f(b) + f(a))
     f = x -> sin(3 * (x - x0)) * log(abs(x - x0))                       # log-singular test
     fp = x -> 3cos(3(x - x0)) * log(abs(x - x0)) + 3sinc(3(x - x0) / pi)
     println("smooth.log error = ", sum(w .* fp.(x)) - f(b) + f(a))
+```
+
+Its output is
+```julia-repl
+num nodes = 34
+smooth error = -4.298783551348606e-13
+smooth.log error = 8.89843754237063e-13
 ```
 
 This is in ``julia/examples/``. Here is a picture of the function family (top left), orthonormal set on the adaptive grid (top right), stick plot of nodes and weights (lower left), and errors on each member of the input family (lower right):
