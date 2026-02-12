@@ -15,7 +15,7 @@ function errquadfuncset(x::Vector, w::Vector, fs::Function, a, b)
     I - Ig
 end
 
-verb = false #true   # set to true for figures
+verb = true   # true gives one figure per case
 tol = 1e-12
 
 @testset "genchebquad" begin
@@ -41,7 +41,7 @@ tol = 1e-12
             worstpow = -0.55; powstep = 0.4 
             fs = x -> [x^r for r = worstpow .+ powstep * (0:30)]
             # note: fails for min r<-0.6. not sure why - try arb prec?
-            # *** to-do: test integrand from this power set
+            # *** to-do: devise and test integrand from this power set
         elseif case == 2
             println("poly plus nearby complex sqrt times poly...")
             a = -1.0

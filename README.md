@@ -46,7 +46,7 @@ Note the clustering around the singularity location ``x0 = 0.6``. See the docstr
 ### Directories in this repo
 
  - ``julia`` for Julia code
- - ``matlab`` for MATLAB/Octave code
+ - ``matlab`` for MATLAB code using Chebfun
  - ``pics`` for output figures
 
 ### References
@@ -56,5 +56,5 @@ Note the clustering around the singularity location ``x0 = 0.6``. See the docstr
 
 ### Acknowledgments
 
-The author is grateful to Dhairya Malhotra for teaching him GCQ, and to Steven G. Johnson for adding segment and count outputs to ``QuadJK.jl``.
+The author is grateful to Dhairya Malhotra for teaching him GCQ, to Steven G. Johnson for adding segment and count outputs to ``QuadJK.jl``, and to Dan Fortunato for digging into ``chebfun`` objects.
 
