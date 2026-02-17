@@ -4,13 +4,6 @@
 using FastGaussQuadrature, QuadGK, LinearAlgebra
 using Printf
 
-struct gcq_info
-    segs
-    xg
-    wg
-    U
-end
-
 """
     x, w = genchebquad(fs, a, b[, tol]; verb=0)
     
@@ -34,14 +27,16 @@ Notes:
    can return its segments arrays (as of )
 
 References:
-* Sec. 4.3 of: J. Bremer, Z. Gimbutas, and V. Rokhlin, "A nonlinear optimization
+* Sec. 4 of: J. Bremer, Z. Gimbutas, and V. Rokhlin, "A nonlinear optimization
     procedure for generalized Gaussian quadratures," SIAM J. Sci. Comput.
     32(4), 1761--1788 (2010).
 * App. B of: D. Malhotra and A. H. Barnett, "Efficient convergent boundary integral
     methods for slender bodies," J. Comput. Phys. 503, 112855 (2024).
 """
 function genchebquad(fs::Function, a, b, tol=1e-10; verb=0)
-    I,E,segs,numeval = quadgk_segbuf_count(fs,Float64(a),Float64(b); atol=tol, rtol=tol)
+    # use slightly better tol for adaptive quadr...
+    I,E,segs,numeval = quadgk_segbuf_count(fs,Float64(a),Float64(b);
+                                            atol=tol/10, rtol=tol/10)
     sort!(segs; lt = (s,t) -> s.a<t.a)        # reorder segs along real axis
     Nf = length(I)     # how many funcs
     z0,w0 = gausslegendre(14)       # gets twice GK(7,15) min order of 2*7-1=13
@@ -57,16 +52,27 @@ function genchebquad(fs::Function, a, b, tol=1e-10; verb=0)
     S = svd(A)    # reduced
     r = sum(S.S .> tol*S.S[1])         # *** allow setting rank instead of tol
     if verb>0; println("rank (# nodes chosen) = $r"); end   #"\tU_11=",S.U[1,1])
+    #display(S.S)
     U = S.U[:,1:r]
     F = qr(U',ColumnNorm())            # CPQR to get nodes in 1...m
     nodeinds = F.p[1:r]                # permutation vector
+    sort!(nodeinds)                    # returns node increasing (not pivot order)
+    #nodeinds[1]=700            # *** debug mat: moving doesn't ruin acc!
     x = xg[nodeinds];                  # final subset of nodes
     # Vandermonde: vals of U-funcs at these nodes...
-    V = Diagonal(1.0./sqrt.(wg[nodeinds]))*U[nodeinds,:] 
+    V = Diagonal(1.0./sqrt.(wg[nodeinds])) * U[nodeinds,:]
+    Vsw = U[nodeinds,:]
     Is = transpose(sum(Diagonal(sqrt.(wg))*U, dims=1))  # col vec of u func ints
-    w = V' \ Is              # solve trans Vandermonde sys to match u integrals
+    #w = V' \ Is     # solve trans Vandermonde sys to match u integrals (via PLU?)
+    #w = svd(V') \ Is              # solve trans Vandermonde via SVD, no better
+    #w = qr(V',ColumnNorm()) \ Is  # solve trans Vandermonde via CPQR, no better
+    #w = sqrt.(wg[nodeinds]).* (F.R[:,1:r] \ (F.Q' * Is)) # use QR solve? worse!
+    #println(Vsw' \ Is)   # examine soln vec sizes
+    w = sqrt.(wg[nodeinds]) .* (Vsw' \ Is)   # right-precond, solve for wei/sqrt(wg) 
     # *** fs complex not recommended; here for V complex why not transp?
-    if verb>0; @printf "weights: Vandermonde^T resid nrm %.3g\n" norm(V'*w - Is); end
-    info = gcq_info(segs,xg,wg,U)   # save diagnostics
-    x, w[:], info      # make w col vec too. not yet sorted wrt x_j
+    if verb>0; @printf "wei: Vandermonde^T resid nrm %.3g\n" norm(V'*w - Is); end
+    info = (segs=segs, xg=xg, wg=wg, Is=Is, U=U, nodeinds=nodeinds)  # diagnostics
+    x, w[:], info      # make w col vec too
 end
+# notes: named tuple is neater diagnostic object than custom struct
+# Bremer et al '10 suggests in Sec 4.2 using QR, but I find worse than plain \.

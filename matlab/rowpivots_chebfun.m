@@ -28,4 +28,6 @@ info.ff = ff; info.x = x; info.w = w;   % diagnostic output
 ff = ff .* sqrt(w);  % row-wise scale so l^2 norm of columns approx L^2 norms
 [Q,R,inds] = qr(ff', 'vector');   % CPQR of transpose, rank-revealing
 inds = inds(1:N);    % N skeleton cols of ff' that span its range (use ID?)
+inds = sort(inds);   % optional
 p = x(inds);         % convert pivot indices to real numbers in [a,b]
+info.inds = inds; info.Q = Q; info.R = R;

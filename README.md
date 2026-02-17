@@ -51,7 +51,7 @@ Note the clustering around the singularity location ``x0 = 0.6``. See the docstr
 
 ### References
 
- - Sec. 4.3 of: J. Bremer, Z. Gimbutas, and V. Rokhlin, "A nonlinear optimization procedure for generalized Gaussian quadratures," SIAM J. Sci. Comput. 32(4), 1761--1788 (2010).
+ - Sec. 4 of: J. Bremer, Z. Gimbutas, and V. Rokhlin, "A nonlinear optimization procedure for generalized Gaussian quadratures," SIAM J. Sci. Comput. 32(4), 1761--1788 (2010).
  - App. B of: D. Malhotra and A. H. Barnett, "Efficient convergent boundary integral methods for slender bodies," J. Comput. Phys. 503, 112855 (2024).
 
 ### Acknowledgments

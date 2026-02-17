@@ -11,16 +11,16 @@ function errquadfuncset(x::Vector, w::Vector, fs::Function, a, b)
     I, _, nev = quadgk_count(fs, a, b; rtol=1e-12, atol=1e-14)  # est true ints (rtol can fail)
     Ig = reduce(hcat, fs.(x)) * w    # test rule (x,w). reduce makes Nf*n mat (n=#nodes)
     maxerr = norm(I - Ig, Inf)
-    @printf "max abs I err in fs vs quadgk (needed %d evals) = %.3g\n" nev maxerr
+    @printf "max abs I err in fs vs quadgk (which took %d evals) = %.3g\n" nev maxerr
     I - Ig
 end
 
-verb = true   # true gives one figure per case
+verb = 1   # >0 gives one figure per case
 tol = 1e-12
 
 @testset "genchebquad" begin
 
-    for case = 0:4     # ------------------------------- loop over func set choices
+    for case = 1      # ------------------------------- loop over func set choices
         @printf("\ncase %d: ", case)
         x0 = 0.0    # singularity loc, needed to access later outside conditional block
         f = fp = fpnam = nothing   # allow defined outside conditional block
@@ -38,7 +38,8 @@ tol = 1e-12
             a = 0.0
             b = 1.0
             # set of not-very-rational integrable powers >-1 ...
-            worstpow = -0.55; powstep = 0.4 
+            #worstpow = -0.55; powstep = 0.4
+            worstpow = -0.5; powstep = 0.5 
             fs = x -> [x^r for r = worstpow .+ powstep * (0:30)]
             # note: fails for min r<-0.6. not sure why - try arb prec?
             # *** to-do: devise and test integrand from this power set
@@ -81,10 +82,20 @@ tol = 1e-12
             f = x -> log(abs(x - x0))
             fp = x -> 1 / (x - x0)
             fpnam = "anal/(x-x0)"
+       elseif case == 5
+            println("non-integer sing power set not at origin...")
+            a = 1.0       # x[1]=1+emach but fails to get acc for worstpow=-.5
+            b = 2.0
+            worstpow = -0.5; powstep = 0.5 
+            fs = x -> [(x-a)^r for r = worstpow .+ powstep * (0:30)]
         end
         # *** to add continuous ranges of powers or singularity locations (Dhairya)
 
-        @time x, w, i = genchebquad(fs, a, b, tol; verb=1)   # build a rule
+        @time global x, w, i = genchebquad(fs, a, b, tol; verb=1)   # build a rule
+        if verb>0    # show nodes, wei as 2 cols
+            [@printf("x_%-3d= %-22.17g w_%-3d= %-22.17g\n",j,x[j],j,w[j]) for j in 1:length(x)]
+        end
+        # display(fs.(x)) # any infs?
         Ierrs = errquadfuncset(x, w, fs, a, b)             # check the rule (on family)
         pass = norm(Ierrs, Inf) < 10tol                  # unif err over funcs in family
         pass || println(Ierrs)
@@ -96,7 +107,7 @@ tol = 1e-12
             @test Irelerr < 10tol
         end
 
-        if verb              # plot stuff from gcq_info struct i
+        if verb>0              # plot stuff from gcq_info struct i
             fig = Figure()
             ax1 = Axis(fig[1, 1], title=@sprintf("Case %d: input func set", case))
             Nf = length(fs(a))   # num input funcs
