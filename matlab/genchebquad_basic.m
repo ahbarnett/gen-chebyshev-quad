@@ -12,7 +12,7 @@ function [x, w, info] = genchebquad_basic(fs, ab, tol)
 %
 % Example (smooth plus log-singular times smooth):
 %  fs = @(x) [x.^(0:20), x.^(0:20).*log(abs(x-0.7))];
-%  [x,w] = genchebquad_basic(@(x) x.^(-0.2:0.4:20), [-1 1], 1e-12)
+%  [x,w] = genchebquad_basic(fs, [-1 1], 1e-12)
 %
 % [x,w,info] = genchebquad_basic(fs, ab, tol) also prints diagnostics and
 %  returns diagnostic info:
@@ -26,7 +26,7 @@ function [x, w, info] = genchebquad_basic(fs, ab, tol)
 %
 % Notes:
 %  1. This is a basic implementation using Chebfun, making the
-%     algorithm clear, but is sometimes less accurate than would be possible.)
+%     algorithm clear, but cannot handle singularities as well as possible.
 %  2. Needs Chebfun to be in the path.
 
 % Alex Barnett 2/17/26
@@ -35,7 +35,7 @@ if nargin<3 || isempty(tol), tol=1e-10; end
 verb = (nargout>2);
 
 A = chebfun(fs, ab, 'splitting','on', 'splitLength', 50);   % interpolate func set
-% (here the degree of each chebfun panel should be grown for more accuracy...)
+% (now the degree of each chebfun panel should really be grown for more accuracy...)
 [U,S,V] = svd(A);                  % all N cols of U computed, where N = numel(fs)
 r = sum(diag(S) > S(1)*tol);       % eps-rank
 U = U(:,1:r);         % keep o.n. quasimat cols, an eps-acc (in L^2) basis for fs

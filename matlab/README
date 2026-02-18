@@ -1,0 +1,24 @@
+MATLAB+Chebfun implementation of generalized Chebyshev quadratures
+
+Make sure chebfun is in your path, then to demo, run test_genchebquad.
+For the algorithm, read genchebquad_basic.m or see ../README.md
+
+Quick example:
+
+pows = -0.2:0.4:20;
+[x,w] = genchebquad_basic(@(x) x.^pows, [0 1], 1e-12)
+
+returns nodes x and weights w that integrate functions on [0,1] in the span
+of the listed power-laws, with 12-digit target tolerance.
+
+Alex Barnett 2/17/26
+
+Main files:
+genchebquad_basic.m  : simple/readable version (worse with strong singularities)
+test_genchebquad.m   : tester/demo script for the above
+genchebquad_dev.m    : development version, regenerating nodes (more accurate)
+
+Utilities:
+rowpivots_chebfun.m  : pivoted LQ decomposition of a chebfun
+getquad_chebfun.m    : extract or build quadrature scheme from split chebfun
+gauss.m              : Gauss-Legendre quadrature
