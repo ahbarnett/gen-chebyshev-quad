@@ -34,7 +34,7 @@ function [x,w] = getquad_chebfun(f, n)
       xc{k} = mid + gx*L/2;   % overwrite node cells
       wc{k} = gw(:) * L/2;    % their weights
     else
-      wc{k} = chebtech2.quadwts(length(xc{k})).' * L/2;  % CC weights
+      wc{k} = chebtech2.quadwts(length(xc{k})).' * L/2;   % CC wgts for xc
     end
   end
   % stack cell arrays to single col

@@ -19,7 +19,7 @@ function [x, w, info] = genchebquad_dev(fs, ab, tol)
 %   info.ff = m*N matrix of func vals of U, orthonormal basis for fs func set
 %   info.inds = indices of fine nodes selected, etc
 %
-% Called without arguments, does self-test.
+% Called without arguments, does self-test (using internal code, not the std test)
 %
 % See also: TEST_GENCHEBQUAD
 %
@@ -27,22 +27,22 @@ function [x, w, info] = genchebquad_dev(fs, ab, tol)
 %  1. This is a development implementation, and is unstable, hard to read
 
 % Alex Barnett 2/17/26
-if nargin==0, verb=1; test_genchebquad; return; end
+if nargin==0, local_test_genchebquad; return; end
 if nargin<3 || isempty(tol), tol=1e-10; end
 verb = (nargout>2);
 
-sl = 50;   % max num nodes per panel (typ seems to be about half this).
-if numel(ab)==2    % make quasimatrix (each col a chebfun)..,
+sl = 50;   % max num nodes per panel (typ seems to be < sl/2), and regen nodes.
+if numel(ab)==2    % make quasimatrix (each col a chebfun)...
   A = chebfun(fs,ab, 'splitting','on', 'splitLength',sl);
 else
-  for k=1:numel(ab)-1
+  for k=1:numel(ab)-1   % forces more splits than simply numel(ab)>2 to chebfun..
     A{k} = chebfun(fs,ab([k k+1]), 'splitting','on', 'splitLength',sl);
   end
   A = join(A{:});     % splats cells to arg list, join concats chebfuns
 end
 
 % do everything by hand using more resampled nodes... (using the panel split)
-[xx,ww] = getquad_chebfun(A,sl);
+[xx,ww] = getquad_chebfun(A,sl);       % regen sl nodes per panel
 N = size(A,2);        % how many funcs
 ff = fs(xx);          % from now we ignore the chebfun A...
 ff = ff .* sqrt(ww);  % row-wise scale so l^2 norm of columns approx L^2 norms
@@ -117,3 +117,45 @@ end
 % Tried removing hscale factor in happiness, no effect.
 
 % Solved acc by resampling onto sl=50 nodes per chebfun panel
+
+
+
+%%%%%%%%%%%% tester with hacks
+function local_test_genchebquad
+verb = 0;
+
+tol=1e-12;  % target tol
+d = 20;     % max degree
+
+for expt = 1 %0:3   % .... loop over function families
+  ab = [-1 1];   % std interval
+  switch expt
+    case 0       % monomials (trivial case)
+      fs = @(x) x.^(0:d);        % each col elem of x produces a row
+    case 1       % non-integer power set
+      %ab = [0 1]; fs = @(x) x.^(-0.3:0.4:d);
+      ab = [0 1e-10 1]; fs = @(x) x.^(-0.5:0.4:d);  % harder: solved by regen nodes!
+    case 2       % smooth plus log-singular times smooth
+      fs = @(x) [x.^(0:d), x.^(0:d).*log(abs(x-0.6))];   % stack rows
+    case 3       % smooth plus nearby pole times smooth
+      z0 = 0.4+1e-4i;    % pole loc
+      fs = @(x) [x.^(0:d), x.^(0:d).*real(1./(x-z0)) x.^(0:d).*imag(1./(x-z0))];
+  end
+  fprintf('expt %d...\n', expt);
+  [x, w, info] = genchebquad_dev(fs, ab, tol);   % or use _dev version
+  if verb, for j=1:numel(x)
+      fprintf('x_%d = %-22.17g \t w_%d = %-22.17g\n',j,x(j),j,w(j));
+  end, end
+  a = ab(1); b = ab(end);  % get interval
+  N = numel(fs((a+b)/2));  % how many funcs?
+  kthcol = @(y,k) y(:,k);  % get k'th col, since fs(1.0)(1) not allowed :(
+  Is = nan(1,N);
+  for k=1:N       % indep numerical integrals of family (quadgk needs x shape)
+    Is(k) = quadgk(@(x) reshape(kthcol(fs(x(:)),k),size(x)), a,b, ...
+                   'reltol',tol/10, 'maxintervalcount',1e4);  % this can fail too!
+                                                              % reltol crucial
+  end
+  IGCQ = w'*fs(x);   % apply GCQ to all in family to get row vec
+  fprintf('\t%d nodes: max |I_quadgk-I_GCQ| over family = %.3g\n',...
+          numel(x), max(abs(Is-IGCQ)));
+end              % ....

@@ -1,13 +1,13 @@
 % Test driver/demo for genchebquad_basic.
 % (Chebfun must be in path, but only needed within genchebquad_basic)
 % Alex Barnett, 2/17/26. Tested with Chebfun 5.7.0.
+% To-do: insert non-family f(x) tests with the right singularity, as Julia.
 
-if ~exist('verb','var'), verb=1; end      % respect an incoming verb setting
-
+verb = 0;   % 0: short text, 1: figs + more text
 tol=1e-12;  % target tol
 d = 20;     % max degree
 
-for expt = 1 %0:3   % .... loop over function families
+for expt = 0:3   % .... loop over function families
   ab = [-1 1];   % std interval
   switch expt
     case 0       % monomials (trivial case)
@@ -15,7 +15,6 @@ for expt = 1 %0:3   % .... loop over function families
     case 1       % non-integer power set (acc poor if pow<-0.3 for now)
       ab = [0 1];
       fs = @(x) x.^(-0.3:0.4:d);
-      ab = [0 1e-10 1]; fs = @(x) x.^(-0.5:0.4:d);   % 6-7 digits only for now
     case 2       % smooth plus log-singular times smooth
       fs = @(x) [x.^(0:d), x.^(0:d).*log(abs(x-0.6))];   % stack rows
     case 3       % smooth plus nearby pole times smooth
@@ -23,7 +22,7 @@ for expt = 1 %0:3   % .... loop over function families
       fs = @(x) [x.^(0:d), x.^(0:d).*real(1./(x-z0)) x.^(0:d).*imag(1./(x-z0))];
   end
   fprintf('expt %d...\n', expt);
-  [x, w, info] = genchebquad_dev(fs, ab, tol);   % or use _dev version
+  [x, w, info] = genchebquad_basic(fs, ab, tol);
   if verb, for j=1:numel(x)
       fprintf('x_%d = %-22.17g \t w_%d = %-22.17g\n',j,x(j),j,w(j));
   end, end
