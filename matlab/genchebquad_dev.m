@@ -54,7 +54,7 @@ U = U(:,1:r);          % keep o.n. cols, eps-acc (in L^2) basis for fs
 inds = inds(1:r);    % N skeleton cols of ff' that span its range (use ID?)
 inds = sort(inds);   % optional
 x = xx(inds);         % convert pivot indices to real numbers x in [a,b]
-info.x = xx; info.U = U; info.inds = inds; info.Q = Q; info.R = R;
+info.x = xx; info.ff = U./sqrt(ww); info.inds = inds; info.Q = Q; info.R = R;
 
 %U.points{1}  % turns out a 1-pt smooth piece can become 2-pt when take SVD :(
 %[x, info] = rowpivots_chebfun(U,sl);   % since no LQ factorization for chebfuns
@@ -127,7 +127,7 @@ verb = 0;
 tol=1e-12;  % target tol
 d = 20;     % max degree
 
-for expt = 1 %0:3   % .... loop over function families
+for expt = 0:3   % .... loop over function families
   ab = [-1 1];   % std interval
   switch expt
     case 0       % monomials (trivial case)
@@ -136,6 +136,7 @@ for expt = 1 %0:3   % .... loop over function families
       %ab = [0 1]; fs = @(x) x.^(-0.3:0.4:d);
       ab = [0 1e-10 1]; fs = @(x) x.^(-0.5:0.4:d);  % harder: solved by regen nodes!
     case 2       % smooth plus log-singular times smooth
+                 %ab = [-1 0.6-1e-6 0.6+1e-6 1];  % actually a disaster -> NaNs
       fs = @(x) [x.^(0:d), x.^(0:d).*log(abs(x-0.6))];   % stack rows
     case 3       % smooth plus nearby pole times smooth
       z0 = 0.4+1e-4i;    % pole loc

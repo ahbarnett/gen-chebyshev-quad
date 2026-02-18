@@ -13,6 +13,7 @@ of the listed power-laws, with 12-digit target tolerance.
 
 Alex Barnett 2/17/26
 
+
 Main files:
 genchebquad_basic.m  : simple/readable version (worse with strong singularities)
 test_genchebquad.m   : tester/demo script for the above

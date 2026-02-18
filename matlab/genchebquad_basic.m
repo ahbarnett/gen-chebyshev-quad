@@ -35,7 +35,7 @@ if nargin<3 || isempty(tol), tol=1e-10; end
 verb = (nargout>2);
 
 A = chebfun(fs, ab, 'splitting','on', 'splitLength', 50);   % interpolate func set
-% (now the degree of each chebfun panel should really be grown for more accuracy...)
+% (now nodes in each chebfun panel should really be grown for more accuracy...)
 [U,S,V] = svd(A);                  % all N cols of U computed, where N = numel(fs)
 r = sum(diag(S) > S(1)*tol);       % eps-rank
 U = U(:,1:r);         % keep o.n. quasimat cols, an eps-acc (in L^2) basis for fs

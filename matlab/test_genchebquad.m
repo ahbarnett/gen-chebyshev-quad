@@ -3,8 +3,9 @@
 % Alex Barnett, 2/17/26. Tested with Chebfun 5.7.0.
 % To-do: insert non-family f(x) tests with the right singularity, as Julia.
 
-verb = 0;   % 0: short text, 1: figs + more text
-tol=1e-12;  % target tol
+clear
+verb = 1;   % 0: short text, 1: figs + more text
+tol=1e-10;  % target tol
 d = 20;     % max degree
 
 for expt = 0:3   % .... loop over function families
@@ -12,7 +13,7 @@ for expt = 0:3   % .... loop over function families
   switch expt
     case 0       % monomials (trivial case)
       fs = @(x) x.^(0:d);        % each col elem of x produces a row
-    case 1       % non-integer power set (acc poor if pow<-0.3 for now)
+    case 1       % non-integer power set (acc poor if pow<-0.3 with basic)
       ab = [0 1];
       fs = @(x) x.^(-0.3:0.4:d);
     case 2       % smooth plus log-singular times smooth
@@ -22,7 +23,7 @@ for expt = 0:3   % .... loop over function families
       fs = @(x) [x.^(0:d), x.^(0:d).*real(1./(x-z0)) x.^(0:d).*imag(1./(x-z0))];
   end
   fprintf('expt %d...\n', expt);
-  [x, w, info] = genchebquad_basic(fs, ab, tol);
+  [x, w, info] = genchebquad_dev(fs, ab, tol);
   if verb, for j=1:numel(x)
       fprintf('x_%d = %-22.17g \t w_%d = %-22.17g\n',j,x(j),j,w(j));
   end, end
@@ -32,7 +33,7 @@ for expt = 0:3   % .... loop over function families
   Is = nan(1,N);
   for k=1:N       % indep numerical integrals of family (quadgk needs x shape)
     Is(k) = quadgk(@(x) reshape(kthcol(fs(x(:)),k),size(x)), a,b, ...
-                  'reltol',tol/10, 'maxintervalcount',1e4);
+                  'abstol',tol, 'reltol',tol/10, 'maxintervalcount',1e4);
   end
   IGCQ = w'*fs(x);   % apply GCQ to all in family to get row vec
   fprintf('\t%d nodes: max |I_quadgk-I_GCQ| over family = %.3g\n',...
